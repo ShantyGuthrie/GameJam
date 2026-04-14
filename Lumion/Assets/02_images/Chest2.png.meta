@@ -1,0 +1,330 @@
+fileFormatVersion: 2
+guid: a59ba86b2da405c46b7593b3c72d2959
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -672797845623757344
+    second: Chest2_0
+  - first:
+      213: 241737117623857091
+    second: Chest2_1
+  - first:
+      213: -6904775146961378389
+    second: Chest2_2
+  - first:
+      213: 2496182079540359272
+    second: Chest2_3
+  - first:
+      213: -5003444548353121033
+    second: Chest2_4
+  - first:
+      213: 7541167783277228334
+    second: Chest2_5
+  - first:
+      213: 6763327276916636344
+    second: Chest2_6
+  - first:
+      213: -5014127829123116658
+    second: Chest2_7
+  - first:
+      213: -4363296417656943760
+    second: Chest2_8
+  - first:
+      213: -3673196970936939924
+    second: Chest2_9
+  - first:
+      213: -3638514625916814308
+    second: Chest2_10
+  - first:
+      213: 8640953193269250071
+    second: Chest2_11
+  - first:
+      213: -5749967837349085212
+    second: Chest2_12
+  - first:
+      213: -1115551655255515469
+    second: Chest2_13
+  - first:
+      213: 3882659795530800616
+    second: Chest2_14
+  - first:
+      213: 8798138807609601229
+    second: Chest2_15
+  - first:
+      213: 2324369196901040306
+    second: Chest2_16
+  - first:
+      213: 7920474155636561208
+    second: Chest2_17
+  - first:
+      213: -8668057023244564187
+    second: Chest2_18
+  - first:
+      213: -6731689828937856240
+    second: Chest2_19
+  - first:
+      213: 1668746526738998009
+    second: Chest2_20
+  - first:
+      213: -6683505809492481999
+    second: Chest2_21
+  - first:
+      213: 8745373939383472492
+    second: Chest2_22
+  - first:
+      213: -2506327195162729409
+    second: Chest2_23
+  - first:
+      213: -805603371381183740
+    second: Chest2_24
+  - first:
+      213: -3428263193021928561
+    second: Chest2_25
+  - first:
+      213: 7029045927305469896
+    second: Chest2_26
+  - first:
+      213: 8439293567419002812
+    second: Chest2_27
+  - first:
+      213: -6210092208857094790
+    second: Chest2_28
+  - first:
+      213: 685377042114118540
+    second: Chest2_29
+  - first:
+      213: -5992343951865577974
+    second: Chest2_30
+  - first:
+      213: 8401375722207353322
+    second: Chest2_31
+  - first:
+      213: 5021504975602090872
+    second: Chest2_32
+  - first:
+      213: -5793899160436168196
+    second: Chest2_33
+  - first:
+      213: 6384219556637964876
+    second: Chest2_34
+  - first:
+      213: -2681462227041875765
+    second: Chest2_35
+  - first:
+      213: -1147822891157494911
+    second: Chest2_36
+  - first:
+      213: -7085662311225987844
+    second: Chest2_37
+  - first:
+      213: -28135110450906579
+    second: Chest2_38
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Chest2_26
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 194
+        width: 134
+        height: 105
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8cfd2f687003c8160800000000000000
+      internalID: 7029045927305469896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chest2_36
+      rect:
+        serializedVersion: 2
+        x: 167
+        y: 176
+        width: 135
+        height: 129
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 183ee73792d1210f0800000000000000
+      internalID: -1147822891157494911
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 0c0ad65a8e017594d81e3eb15bc4b8b8
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Chest2_0: -672797845623757344
+      Chest2_1: 241737117623857091
+      Chest2_10: -3638514625916814308
+      Chest2_11: 8640953193269250071
+      Chest2_12: -5749967837349085212
+      Chest2_13: -1115551655255515469
+      Chest2_14: 3882659795530800616
+      Chest2_15: 8798138807609601229
+      Chest2_16: 2324369196901040306
+      Chest2_17: 7920474155636561208
+      Chest2_18: -8668057023244564187
+      Chest2_19: -6731689828937856240
+      Chest2_2: -6904775146961378389
+      Chest2_20: 1668746526738998009
+      Chest2_21: -6683505809492481999
+      Chest2_22: 8745373939383472492
+      Chest2_23: -2506327195162729409
+      Chest2_24: -805603371381183740
+      Chest2_25: -3428263193021928561
+      Chest2_26: 7029045927305469896
+      Chest2_27: 8439293567419002812
+      Chest2_28: -6210092208857094790
+      Chest2_29: 685377042114118540
+      Chest2_3: 2496182079540359272
+      Chest2_30: -5992343951865577974
+      Chest2_31: 8401375722207353322
+      Chest2_32: 5021504975602090872
+      Chest2_33: -5793899160436168196
+      Chest2_34: 6384219556637964876
+      Chest2_35: -2681462227041875765
+      Chest2_36: -1147822891157494911
+      Chest2_37: -7085662311225987844
+      Chest2_38: -28135110450906579
+      Chest2_4: -5003444548353121033
+      Chest2_5: 7541167783277228334
+      Chest2_6: 6763327276916636344
+      Chest2_7: -5014127829123116658
+      Chest2_8: -4363296417656943760
+      Chest2_9: -3673196970936939924
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
