@@ -91,7 +91,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1.55, y: 1.51}
+  m_Size: {x: 1.58, y: 1.53}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -109,9 +109,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   velocidadDeMovimiento: 5
+  vidasMaximas: 10
+  invulnerabilidadTrasDanio: 0.5
   fuerzaDeSalto: 6
   bufferSaltoSegundos: 0.12
-  tiempoRespaldoAterrizajeAnimator: 0.55
   saltosPorAterrizaje: 2
   umbralVelocidadVerticalSuelo: 0.05
   groundCheck: {fileID: 5859565898829197553}
@@ -120,6 +121,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   animatorController: {fileID: 9100000, guid: e762c878c94e7f34e95bb9659af7a4fe, type: 2}
+  duracionOnDamageAnimator: 0.2
+  usarRespiracion: 1
+  velocidadRespiracion: 1.6
+  intensidadRespiracion: 0.08
+  compresionHorizontalRespiracion: 0.45
+  objetivoRespiracion: {fileID: 0}
 --- !u!50 &1269463597623200966
 Rigidbody2D:
   serializedVersion: 5
@@ -207,8 +214,8 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1.55, y: 1.51}
-    newSize: {x: 1.55, y: 1.51}
+    oldSize: {x: 1.58, y: 1.53}
+    newSize: {x: 1.58, y: 1.53}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0

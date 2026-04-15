@@ -1,8 +1,16 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
+    public enum FuenteDanio
+    {
+        Generico = 0,
+        Boss = 1,
+        Pinchos = 2
+    }
+
     private Rigidbody2D rb2D;
     private SpriteRenderer[] _sprites;
 
@@ -11,24 +19,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float velocidadDeMovimiento = 6f;
     private bool mirandoDerecha = true;
 
-    [Header("Vida y dano")]
+    [Header("Vida")]
     [SerializeField] private int vidasMaximas = 10;
-    [SerializeField] private float duracionRalentizacion = 0.75f;
-    [SerializeField, Range(0.1f, 1f)] private float multiplicadorVelocidadAlRecibirDanio = 0.5f;
-    [SerializeField, Range(0.1f, 1f)] private float multiplicadorSaltoAlRecibirDanio = 0.7f;
-    [SerializeField] private float invulnerabilidadTrasDanio = 0.35f;
+    [SerializeField] private float invulnerabilidadTrasDanio = 0.5f;
     private int _vidasRestantes;
-    private float _tiempoFinRalentizacion;
     private float _tiempoFinInvulnerabilidad;
     private float _multiplicadorVelocidadExterno = 1f;
     private float _multiplicadorSaltoExterno = 1f;
 
     [Header("Salto")]
     [SerializeField] private float fuerzaDeSalto = 12f;
-    [SerializeField, Tooltip("Solo para el salto desde suelo: ventana coyote tras pulsar antes de tocar suelo. El doble salto en el aire solo cuenta pulsaciones nuevas (no buffer).")]
+    [SerializeField, Tooltip("Ventana de buffer para salto en suelo.")]
     private float bufferSaltoSegundos = 0.12f;
-    [SerializeField, Tooltip("Solo si el overlap del suelo no se corta nunca en el salto: tras estos segundos y con velocidad casi nula se fuerza fin del \"aire\" del Animator.")]
-    private float tiempoRespaldoAterrizajeAnimator = 0.55f;
     [SerializeField, Tooltip("Saltos maximos por cada vez que tocas suelo (2 = doble salto).")]
     private int saltosPorAterrizaje = 2;
     [SerializeField, Tooltip("Para resetear saltos: se considera suelo cuando el overlap toca y no estas subiendo.")]
@@ -41,16 +43,38 @@ public class PlayerController : MonoBehaviour
 
     [Header("Animator Controller")]
     [SerializeField] private RuntimeAnimatorController animatorController;
+    [SerializeField] private float duracionOnDamageAnimator = 0.2f;
     private Animator _animator;
+    private bool _animatorTieneOnDamage;
+
+    [Header("Efecto Pinchos")]
+    [SerializeField] private float duracionDistorsionPinchos = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float intensidadDistorsionPinchos = 0.18f;
+    [SerializeField, Range(0f, 1f)] private float alphaMinimoGolpePinchos = 0.45f;
+    [SerializeField] private float fuerzaRebotePinchos = 4.5f;
+
+    [Header("Respiracion")]
+    [SerializeField] private bool usarRespiracion = true;
+    [SerializeField] private float velocidadRespiracion = 1.6f;
+    [SerializeField] private float intensidadRespiracion = 0.08f;
+    [SerializeField, Tooltip("Cuanto se ensancha/achica en X durante la respiracion.")]
+    private float compresionHorizontalRespiracion = 0.45f;
+    [SerializeField] private Transform objetivoRespiracion;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSourceSfx;
+    [SerializeField] private AudioClip sonidoSalto;
+    [SerializeField] private float duracionMaxSonidoSalto = 1f;
 
     private InputAction _accionSalto;
     private float _bufferSaltoRestante;
-    private bool _sueloParaSaltoPrev;
-    private bool _tieneEstadoSueloPrev;
-    // Tras saltar: Animator en aire hasta despegar (sin overlap) o hasta aterrizar (respaldo si el overlap no se corta nunca).
-    private bool _animatorEsperandoDespegarDelSuelo;
-    private float _tiempoInicioSaltoAnimator;
     private int _saltosRestantes;
+    private Vector3 _escalaBaseRespiracion;
+    private float _tiempoFinOnDamageAnimator;
+    private float _tiempoInicioDistorsionPinchos;
+    private float _tiempoFinDistorsionPinchos;
+    private float _alphaBasePorVida = 1f;
+    private Coroutine _rutinaCorteSonidoSalto;
 
     private void Awake()
     {
@@ -87,6 +111,21 @@ public class PlayerController : MonoBehaviour
         if (animatorController != null)
             _animator.runtimeAnimatorController = animatorController;
 
+        _animatorTieneOnDamage = TieneParametroAnimator("OnDamage", AnimatorControllerParameterType.Bool);
+
+        if (objetivoRespiracion == null && _animator != null && _animator.transform != transform)
+            objetivoRespiracion = _animator.transform;
+        if (objetivoRespiracion != null)
+            _escalaBaseRespiracion = objetivoRespiracion.localScale;
+
+        if (audioSourceSfx == null)
+            audioSourceSfx = GetComponent<AudioSource>();
+        if (audioSourceSfx == null)
+            audioSourceSfx = gameObject.AddComponent<AudioSource>();
+        audioSourceSfx.playOnAwake = false;
+        audioSourceSfx.loop = false;
+        audioSourceSfx.spatialBlend = 0f;
+
         _saltosRestantes = saltosPorAterrizaje;
         _vidasRestantes = Mathf.Max(1, vidasMaximas);
         ActualizarOpacidadPorVida();
@@ -97,14 +136,6 @@ public class PlayerController : MonoBehaviour
         float h = 0f;
         bool contactoSuelo = EnSuelo();
         bool sueloParaSalto = contactoSuelo && rb2D.linearVelocity.y <= umbralVelocidadVerticalSuelo;
-        bool acabaDeAterrizar = _tieneEstadoSueloPrev && sueloParaSalto && !_sueloParaSaltoPrev;
-        if (acabaDeAterrizar)
-        {
-            _saltosRestantes = saltosPorAterrizaje;
-        }
-
-        _sueloParaSaltoPrev = sueloParaSalto;
-        _tieneEstadoSueloPrev = true;
 
         bool pulsoSaltoEsteFrame = _accionSalto.WasPressedThisFrame();
         if (pulsoSaltoEsteFrame)
@@ -124,33 +155,25 @@ public class PlayerController : MonoBehaviour
         bool saltoEnAire = pulsoSaltoEsteFrame && !sueloParaSalto && _saltosRestantes > 0;
         if (saltoDesdeSuelo || saltoEnAire)
         {
-            rb2D.linearVelocity = new Vector2(rb2D.linearVelocity.x, FuerzaSaltoActual());
+            float salto = fuerzaDeSalto * Mathf.Clamp(_multiplicadorSaltoExterno, 0.1f, 1f);
+            rb2D.linearVelocity = new Vector2(rb2D.linearVelocity.x, salto);
             _bufferSaltoRestante = 0f;
             _saltosRestantes--;
-            _animatorEsperandoDespegarDelSuelo = true;
-            _tiempoInicioSaltoAnimator = Time.time;
+            ReproducirSonidoSaltoCortado();
         }
 
-        if (_animatorEsperandoDespegarDelSuelo)
-        {
-            // Despegue real: el ground check ya no toca suelo.
-            if (!contactoSuelo)
-                _animatorEsperandoDespegarDelSuelo = false;
-            // Caso raro: overlap que no se corta nunca; no usar vy≈0 (eso es también el vértice del salto y acorta la animación).
-            else if (Time.time - _tiempoInicioSaltoAnimator >= tiempoRespaldoAterrizajeAnimator
-                     && Mathf.Abs(rb2D.linearVelocity.y) < 0.12f)
-                _animatorEsperandoDespegarDelSuelo = false;
-        }
-
-        movimientoHorizontal = h * VelocidadActual();
-
-        bool enSueloAnimator = contactoSuelo && !_animatorEsperandoDespegarDelSuelo;
+        movimientoHorizontal = h * velocidadDeMovimiento * Mathf.Clamp(_multiplicadorVelocidadExterno, 0.1f, 1f);
 
         if (_animator != null)
         {
             _animator.SetFloat("Horizontal", Mathf.Abs(movimientoHorizontal));
-            _animator.SetBool("enSuelo", enSueloAnimator);
+            _animator.SetBool("enSuelo", sueloParaSalto);
+            if (_animatorTieneOnDamage)
+                _animator.SetBool("OnDamage", Time.time < _tiempoFinOnDamageAnimator);
         }
+
+        ActualizarRespiracion();
+        ActualizarVisualGolpePinchos();
     }
 
     private void FixedUpdate()
@@ -163,9 +186,36 @@ public class PlayerController : MonoBehaviour
             Girar();
     }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (!EsSueloDeAterrizaje(collision))
+            return;
+
+        // Reset de saltos solo al aterrizar por colision real.
+        _saltosRestantes = saltosPorAterrizaje;
+    }
+
     private bool EnSuelo()
     {
         return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+    }
+
+    private bool EsSueloDeAterrizaje(Collision2D collision)
+    {
+        if (collision == null || collision.collider == null)
+            return false;
+
+        if ((groundLayer.value & (1 << collision.collider.gameObject.layer)) == 0)
+            return false;
+
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            ContactPoint2D contacto = collision.GetContact(i);
+            if (contacto.normal.y > 0.25f)
+                return true;
+        }
+
+        return false;
     }
 
     private void Girar()
@@ -185,43 +235,39 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void RecibirDanio()
+    /// <returns>true si resto vida (no bloqueado por invulnerabilidad).</returns>
+    public bool RecibirDanio(FuenteDanio fuenteDanio = FuenteDanio.Generico)
     {
-        if (Time.time < _tiempoFinInvulnerabilidad || _vidasRestantes <= 0)
-            return;
+        if (_vidasRestantes <= 0)
+            return false;
+
+        if (Time.time < _tiempoFinInvulnerabilidad)
+            return false;
 
         _vidasRestantes--;
-        _tiempoFinInvulnerabilidad = Time.time + invulnerabilidadTrasDanio;
-        _tiempoFinRalentizacion = Time.time + duracionRalentizacion;
+        _tiempoFinInvulnerabilidad = Time.time + Mathf.Max(0.05f, invulnerabilidadTrasDanio);
+        if (fuenteDanio == FuenteDanio.Pinchos)
+        {
+            ActivarOnDamageAnimator();
+            ActivarDistorsionPinchos();
+            AplicarRebotePinchos();
+        }
         ActualizarOpacidadPorVida();
 
         if (_vidasRestantes <= 0)
             Morir();
+
+        return true;
     }
 
-    private float VelocidadActual()
+    public void CurarVida(int cantidad = 1)
     {
-        float velocidadBase = velocidadDeMovimiento * Mathf.Clamp(_multiplicadorVelocidadExterno, 0.1f, 1f);
+        if (_vidasRestantes <= 0 || cantidad <= 0)
+            return;
 
-        if (EstaHerido())
-            return velocidadBase * multiplicadorVelocidadAlRecibirDanio;
-
-        return velocidadBase;
-    }
-
-    private float FuerzaSaltoActual()
-    {
-        float saltoBase = fuerzaDeSalto * Mathf.Clamp(_multiplicadorSaltoExterno, 0.1f, 1f);
-
-        if (EstaHerido())
-            return saltoBase * multiplicadorSaltoAlRecibirDanio;
-
-        return saltoBase;
-    }
-
-    private bool EstaHerido()
-    {
-        return _vidasRestantes < Mathf.Max(1, vidasMaximas);
+        _vidasRestantes = Mathf.Min(vidasMaximas, _vidasRestantes + cantidad);
+        LimpiarDebuffBoss();
+        ActualizarOpacidadPorVida();
     }
 
     private void ActualizarOpacidadPorVida()
@@ -229,19 +275,149 @@ public class PlayerController : MonoBehaviour
         if (_sprites == null || _sprites.Length == 0)
             return;
 
-        float alpha = Mathf.Clamp01((float)_vidasRestantes / Mathf.Max(1, vidasMaximas));
+        _alphaBasePorVida = Mathf.Clamp01((float)_vidasRestantes / Mathf.Max(1, vidasMaximas));
+        AplicarAlphaSprites(_alphaBasePorVida);
+    }
+
+    private void AplicarAlphaSprites(float alpha)
+    {
+        if (_sprites == null || _sprites.Length == 0)
+            return;
+
+        float alphaClamped = Mathf.Clamp01(alpha);
         for (int i = 0; i < _sprites.Length; i++)
         {
             Color c = _sprites[i].color;
-            c.a = alpha;
+            c.a = alphaClamped;
             _sprites[i].color = c;
         }
     }
 
     private void Morir()
     {
-        Debug.Log("Player sin vidas: chau.");
         gameObject.SetActive(false);
+    }
+
+    private void ActualizarRespiracion()
+    {
+        if (!usarRespiracion || objetivoRespiracion == null)
+            return;
+
+        float ondaBase = Mathf.Sin(Time.time * Mathf.Max(0.01f, velocidadRespiracion));
+        // Curva mas organica: inhalacion suave y exhalacion un poco mas larga.
+        float ondaRespiracion = Mathf.Sign(ondaBase) * Mathf.Pow(Mathf.Abs(ondaBase), 1.6f);
+        float intensidad = Mathf.Max(0f, intensidadRespiracion);
+        float factorY = 1f + (ondaRespiracion * intensidad);
+        float factorX = 1f - (ondaRespiracion * intensidad * Mathf.Clamp01(compresionHorizontalRespiracion));
+
+        Vector3 escala = _escalaBaseRespiracion;
+        float signoActualX = Mathf.Sign(objetivoRespiracion.localScale.x);
+        if (Mathf.Approximately(signoActualX, 0f))
+            signoActualX = Mathf.Sign(_escalaBaseRespiracion.x);
+        if (Mathf.Approximately(signoActualX, 0f))
+            signoActualX = 1f;
+
+        // Mantiene la direccion de mirada (izq/der) y solo respira en magnitud.
+        escala.x = Mathf.Abs(_escalaBaseRespiracion.x) * factorX * signoActualX;
+        escala.y *= factorY;
+
+        // Distorsion breve cuando recibe dano de pinchos.
+        float intensidadGolpe = IntensidadGolpePinchosActual();
+        if (intensidadGolpe > 0f)
+        {
+            float wobble = Mathf.Sin((1f - intensidadGolpe) * 22f) * intensidadGolpe;
+            float amp = Mathf.Clamp01(intensidadDistorsionPinchos);
+            escala.x *= 1f + (wobble * amp);
+            escala.y *= 1f - (wobble * amp * 0.9f);
+        }
+
+        objetivoRespiracion.localScale = escala;
+    }
+
+    private void ActivarOnDamageAnimator()
+    {
+        _tiempoFinOnDamageAnimator = Time.time + Mathf.Max(0.05f, duracionOnDamageAnimator);
+    }
+
+    private void ActivarDistorsionPinchos()
+    {
+        _tiempoInicioDistorsionPinchos = Time.time;
+        _tiempoFinDistorsionPinchos = Time.time + Mathf.Max(0.05f, duracionDistorsionPinchos);
+    }
+
+    private void AplicarRebotePinchos()
+    {
+        if (rb2D == null)
+            return;
+
+        float rebote = Mathf.Max(0f, fuerzaRebotePinchos);
+        float nuevaY = Mathf.Max(rb2D.linearVelocity.y, rebote);
+        rb2D.linearVelocity = new Vector2(rb2D.linearVelocity.x, nuevaY);
+    }
+
+    private float IntensidadGolpePinchosActual()
+    {
+        if (Time.time >= _tiempoFinDistorsionPinchos)
+            return 0f;
+
+        float duracion = Mathf.Max(0.001f, _tiempoFinDistorsionPinchos - _tiempoInicioDistorsionPinchos);
+        float progreso = Mathf.Clamp01((Time.time - _tiempoInicioDistorsionPinchos) / duracion);
+        return 1f - progreso;
+    }
+
+    private void ActualizarVisualGolpePinchos()
+    {
+        float intensidadGolpe = IntensidadGolpePinchosActual();
+        if (intensidadGolpe <= 0f)
+        {
+            AplicarAlphaSprites(_alphaBasePorVida);
+            return;
+        }
+
+        float progreso = 1f - intensidadGolpe;
+        float pulso = Mathf.Sin(progreso * Mathf.PI);
+        float alphaObjetivo = Mathf.Lerp(_alphaBasePorVida, _alphaBasePorVida * Mathf.Clamp01(alphaMinimoGolpePinchos), pulso);
+        AplicarAlphaSprites(alphaObjetivo);
+    }
+
+    private bool TieneParametroAnimator(string nombre, AnimatorControllerParameterType tipo)
+    {
+        if (_animator == null)
+            return false;
+
+        AnimatorControllerParameter[] parametros = _animator.parameters;
+        for (int i = 0; i < parametros.Length; i++)
+        {
+            if (parametros[i].name == nombre && parametros[i].type == tipo)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ReproducirSonidoSaltoCortado()
+    {
+        if (audioSourceSfx == null || sonidoSalto == null)
+            return;
+
+        if (_rutinaCorteSonidoSalto != null)
+            StopCoroutine(_rutinaCorteSonidoSalto);
+
+        audioSourceSfx.Stop();
+        audioSourceSfx.clip = sonidoSalto;
+        audioSourceSfx.time = 0f;
+        audioSourceSfx.Play();
+        _rutinaCorteSonidoSalto = StartCoroutine(CortarSonidoTrasTiempo(Mathf.Max(0.05f, duracionMaxSonidoSalto)));
+    }
+
+    private IEnumerator CortarSonidoTrasTiempo(float segundos)
+    {
+        yield return new WaitForSeconds(segundos);
+
+        if (audioSourceSfx != null && audioSourceSfx.isPlaying)
+            audioSourceSfx.Stop();
+
+        _rutinaCorteSonidoSalto = null;
     }
 
     public void AplicarDebuffBoss(float multiplicadorVelocidad, float multiplicadorSalto)
@@ -254,14 +430,5 @@ public class PlayerController : MonoBehaviour
     {
         _multiplicadorVelocidadExterno = 1f;
         _multiplicadorSaltoExterno = 1f;
-    }
-
-    public void CurarVida(int cantidad = 1)
-    {
-        if (cantidad <= 0 || _vidasRestantes <= 0)
-            return;
-
-        _vidasRestantes = Mathf.Min(vidasMaximas, _vidasRestantes + cantidad);
-        ActualizarOpacidadPorVida();
     }
 }

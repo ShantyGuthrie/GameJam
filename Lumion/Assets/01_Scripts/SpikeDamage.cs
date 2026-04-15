@@ -29,6 +29,6 @@ public class SpikeDamage : MonoBehaviour
 
         PlayerController player = obj.GetComponentInParent<PlayerController>();
         if (player != null)
-            player.RecibirDanio();
+            player.RecibirDanio(PlayerController.FuenteDanio.Pinchos);
     }
 }

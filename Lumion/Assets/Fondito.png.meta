@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 77496026996b9794c8579aab7537fbf4
+guid: 066cf61f3a2b5e44f967ece773c9fcf3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8895400876569031245
-    second: FondoChochito_0
+      213: 4798131725045366659
+    second: Fondito_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,67 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: FondoChochito_0
+      name: Fondito_3
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1536
-        height: 1024
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 2050
+        height: 245
+      alignment: 9
+      pivot: {x: 0.50532204, y: 0.37514213}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d427896a7ffc27b70800000000000000
-      internalID: 8895400876569031245
+      spriteID: 38f7cd0e163669240800000000000000
+      internalID: 4798131725045366659
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fondito_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 445
+        width: 2050
+        height: 322
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c2c0873d07bb8a4197b95efa99e760e
+      internalID: -1024740056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fondito_2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 248
+        width: 2048
+        height: 200
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8ccde6ea797e11340b22270d2ae21293
+      internalID: 438711429
       vertices: []
       indices: 
       edges: []
@@ -138,7 +182,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 71684d0484ebbff449e23b8607be93a0
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +192,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      FondoChochito_0: 8895400876569031245
+      Fondito_1: -1024740056
+      Fondito_2: 438711429
+      Fondito_3: 4798131725045366659
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

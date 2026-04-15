@@ -1,9 +1,9 @@
 using UnityEngine;
 
-public class BossController : MonoBehaviour
+public class BossNivel2 : MonoBehaviour
 {
     [Header("Ciclo del boss")]
-    [SerializeField] private bool iniciarAlComenzarNivel = true;
+    [SerializeField] private bool iniciarAlComenzarNivel = false;
     [SerializeField] private int aparicionesMaximas = 3;
     [SerializeField] private float duracionAparicion = 1.2f;
     [SerializeField] private float duracionActivo = 5f;
@@ -45,7 +45,7 @@ public class BossController : MonoBehaviour
         _colliders = GetComponentsInChildren<Collider2D>(true);
         _player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
         SetColisionActiva(false);
-        SetAlpha(0f);
+        SetVisualActiva(false); // Arranca invisible en juego.
 
         if (audioSourceSfx == null)
             audioSourceSfx = GetComponent<AudioSource>();
@@ -112,6 +112,7 @@ public class BossController : MonoBehaviour
         _tiempoFinActivo = Time.time + Mathf.Max(0.1f, duracionActivo);
         _proximoDanio = Time.time;
         SetColisionActiva(true);
+        SetVisualActiva(true);
         SetAlpha(0f);
         ReproducirSonidoAparicion();
     }
@@ -131,7 +132,7 @@ public class BossController : MonoBehaviour
         _apareciendo = false;
         _tiempoProximaAparicion = Time.time + Mathf.Max(0.1f, tiempoEntreApariciones);
         SetColisionActiva(false);
-        SetAlpha(0f);
+        SetVisualActiva(false);
 
         if (aparicionesMaximas > 0 && _aparicionesRealizadas >= aparicionesMaximas)
             _cicloFinalizado = true;
@@ -170,10 +171,6 @@ public class BossController : MonoBehaviour
             transform.position = origen + direccion * Mathf.Min(distanciaPaso, distanciaPermitida);
     }
 
-    /// <summary>
-    /// Un solo camino por frame: evita que varios colliders o OnTriggerExit quiten el debuff
-    /// mientras el jugador sigue en rango, y alinea el daño con golpes reales (no avanza cooldown si sigue invulnerable).
-    /// </summary>
     private void AplicarDebuffYDanioSiCorresponde()
     {
         if (_player == null || !_player.gameObject.activeInHierarchy)
@@ -269,6 +266,18 @@ public class BossController : MonoBehaviour
             c.a = alphaFinal;
             _sprites[i].color = c;
         }
+    }
+
+    private void SetVisualActiva(bool activa)
+    {
+        if (_sprites == null)
+            return;
+
+        for (int i = 0; i < _sprites.Length; i++)
+            _sprites[i].enabled = activa;
+
+        if (!activa)
+            SetAlpha(0f);
     }
 
     private void ReproducirSonidoAparicion()
