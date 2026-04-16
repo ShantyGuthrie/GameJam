@@ -1,9 +1,30 @@
 using System.Collections;
-using UnityEngine;
-using UnityEngine.InputSystem;
+using System.IO;
+using UnityEngine;using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
+    private static bool _cambioEscenaPorPortalEnCurso;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void InicializarBloqueoCambioEscena()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoadedGlobal;
+        SceneManager.sceneLoaded += OnSceneLoadedGlobal;
+        _cambioEscenaPorPortalEnCurso = false;
+    }
+
+    private static void OnSceneLoadedGlobal(Scene scene, LoadSceneMode mode)
+    {
+        _cambioEscenaPorPortalEnCurso = false;
+    }
+
+    public static void NotificarCambioEscenaPorPortal()
+    {
+        _cambioEscenaPorPortalEnCurso = true;
+    }
+
     public enum FuenteDanio
     {
         Generico = 0,
@@ -66,6 +87,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AudioClip sonidoSalto;
     [SerializeField] private float duracionMaxSonidoSalto = 1f;
 
+    [Header("Escena al morir")]
+    [SerializeField] private string nombreEscenaInicio = "Inicio";
+    [SerializeField] private int indiceEscenaInicio = 0;
+    [SerializeField] private string[] nombresEscenaInicioAlternativos = { "MenuPrincipal", "MainMenu", "Inicio" };
+
     private InputAction _accionSalto;
     private float _bufferSaltoRestante;
     private int _saltosRestantes;
@@ -75,6 +101,7 @@ public class PlayerController : MonoBehaviour
     private float _tiempoFinDistorsionPinchos;
     private float _alphaBasePorVida = 1f;
     private Coroutine _rutinaCorteSonidoSalto;
+    private bool _estaMuriendo;
 
     private void Awake()
     {
@@ -295,7 +322,99 @@ public class PlayerController : MonoBehaviour
 
     private void Morir()
     {
-        gameObject.SetActive(false);
+        if (_cambioEscenaPorPortalEnCurso)
+            return;
+
+        if (_estaMuriendo)
+            return;
+
+        _estaMuriendo = true;
+        StartCoroutine(CargarMenuPrincipalTrasMuerte());
+    }
+
+    private IEnumerator CargarMenuPrincipalTrasMuerte()
+    {
+        // Evita quedarse "congelado" si alguna escena dejo el juego pausado.
+        Time.timeScale = 1f;
+        yield return new WaitForEndOfFrame();
+
+        if (IntentarCargarPorNombre("menuInicial"))
+            yield break;
+
+        if (SceneManager.sceneCountInBuildSettings > 0)
+        {
+            SceneManager.LoadScene(0);
+            yield break;
+        }
+
+        if (IntentarCargarPorNombre(nombreEscenaInicio))
+            yield break;
+
+        if (IntentarCargarNombresAlternativos())
+            yield break;
+
+        int indiceDetectado = BuscarIndiceMenuEnBuild();
+        if (indiceDetectado >= 0)
+        {
+            SceneManager.LoadScene(indiceDetectado);
+            yield break;
+        }
+
+        if (indiceEscenaInicio >= 0 && indiceEscenaInicio < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(indiceEscenaInicio);
+            yield break;
+        }
+
+        Debug.LogError(
+            $"No se pudo cargar la escena de inicio al morir. Configura '{nameof(nombreEscenaInicio)}', '{nameof(nombresEscenaInicioAlternativos)}' o '{nameof(indiceEscenaInicio)}' correctamente.",
+            this);
+    }
+
+    private bool IntentarCargarPorNombre(string nombreEscena)
+    {
+        if (!string.IsNullOrWhiteSpace(nombreEscena) &&
+            Application.CanStreamedLevelBeLoaded(nombreEscena))
+        {
+            SceneManager.LoadScene(nombreEscena);
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IntentarCargarNombresAlternativos()
+    {
+        if (nombresEscenaInicioAlternativos == null || nombresEscenaInicioAlternativos.Length == 0)
+            return false;
+
+        for (int i = 0; i < nombresEscenaInicioAlternativos.Length; i++)
+        {
+            if (IntentarCargarPorNombre(nombresEscenaInicioAlternativos[i]))
+                return true;
+        }
+
+        return false;
+    }
+
+    private int BuscarIndiceMenuEnBuild()
+    {
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string ruta = SceneUtility.GetScenePathByBuildIndex(i);
+            if (string.IsNullOrWhiteSpace(ruta))
+                continue;
+
+            string nombre = Path.GetFileNameWithoutExtension(ruta);
+            if (string.IsNullOrWhiteSpace(nombre))
+                continue;
+
+            string nombreLower = nombre.ToLowerInvariant();
+            if (nombreLower.Contains("menu") || nombreLower.Contains("inicio"))
+                return i;
+        }
+
+        return -1;
     }
 
     private void ActualizarRespiracion()

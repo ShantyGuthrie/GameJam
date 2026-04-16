@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class ChestController : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class ChestController : MonoBehaviour
 
     [Header("Interaccion")]
     [SerializeField] private Key interactKey = Key.E;
+    [SerializeField] private string nombreEscenaFinal = "Nivel3";
 
     private bool itemPicked;
     private bool playerInRange;
@@ -156,8 +158,30 @@ public class ChestController : MonoBehaviour
             yield return new WaitForSeconds(chestDelay);
         }
 
+        if (EsEscenaFinal())
+        {
+            FinalizarJuego();
+            yield break;
+        }
+
         if (portalController != null)
             portalController.MostrarPortal();
+    }
+
+    private bool EsEscenaFinal()
+    {
+        string actual = SceneManager.GetActiveScene().name;
+        return !string.IsNullOrWhiteSpace(nombreEscenaFinal) &&
+               string.Equals(actual, nombreEscenaFinal, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void FinalizarJuego()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     private void DesactivarColisionesCofre()

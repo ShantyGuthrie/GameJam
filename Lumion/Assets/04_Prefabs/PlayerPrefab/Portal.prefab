@@ -110,7 +110,7 @@ MonoBehaviour:
   portalAnimator: {fileID: 2701910078088868951}
   portalAppearAnimationStateName: PortalAppear
   ocultarAlInicio: 1
-  nombreEscenaNivel2: Nivel2
+  nombreEscenaNivel2: level2
   indiceEscenaNivel2: 1
   usarNombreEscena: 1
 --- !u!95 &2701910078088868951
