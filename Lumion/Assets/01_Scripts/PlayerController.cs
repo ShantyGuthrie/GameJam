@@ -1,30 +1,10 @@
 using System.Collections;
-using System.IO;
-using UnityEngine;using UnityEngine.InputSystem;
+using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
-    private static bool _cambioEscenaPorPortalEnCurso;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void InicializarBloqueoCambioEscena()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoadedGlobal;
-        SceneManager.sceneLoaded += OnSceneLoadedGlobal;
-        _cambioEscenaPorPortalEnCurso = false;
-    }
-
-    private static void OnSceneLoadedGlobal(Scene scene, LoadSceneMode mode)
-    {
-        _cambioEscenaPorPortalEnCurso = false;
-    }
-
-    public static void NotificarCambioEscenaPorPortal()
-    {
-        _cambioEscenaPorPortalEnCurso = true;
-    }
-
     public enum FuenteDanio
     {
         Generico = 0,
@@ -83,14 +63,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform objetivoRespiracion;
 
     [Header("Audio")]
-    [SerializeField] private AudioSource audioSourceSfx;
+    [SerializeField] private AudioSource audioSourceSalto;
+    [SerializeField] private AudioSource audioSourceDanio;
     [SerializeField] private AudioClip sonidoSalto;
-    [SerializeField] private float duracionMaxSonidoSalto = 1f;
-
-    [Header("Escena al morir")]
-    [SerializeField] private string nombreEscenaInicio = "Inicio";
-    [SerializeField] private int indiceEscenaInicio = 0;
-    [SerializeField] private string[] nombresEscenaInicioAlternativos = { "MenuPrincipal", "MainMenu", "Inicio" };
+    [SerializeField] private AudioClip sonidoDanio;
+    [SerializeField] private float intervaloSonidoSalto = 0.08f;
+    [SerializeField] private float intervaloSonidoDanio = 0.2f;
+    [SerializeField] private float duracionMaxSonidoSalto = 0.18f;
+    [SerializeField] private float duracionMaxSonidoDanio = 0.3f;
 
     private InputAction _accionSalto;
     private float _bufferSaltoRestante;
@@ -100,8 +80,10 @@ public class PlayerController : MonoBehaviour
     private float _tiempoInicioDistorsionPinchos;
     private float _tiempoFinDistorsionPinchos;
     private float _alphaBasePorVida = 1f;
+    private float _proximoSonidoSalto;
+    private float _proximoSonidoDanio;
     private Coroutine _rutinaCorteSonidoSalto;
-    private bool _estaMuriendo;
+    private Coroutine _rutinaCorteSonidoDanio;
 
     private void Awake()
     {
@@ -145,13 +127,15 @@ public class PlayerController : MonoBehaviour
         if (objetivoRespiracion != null)
             _escalaBaseRespiracion = objetivoRespiracion.localScale;
 
-        if (audioSourceSfx == null)
-            audioSourceSfx = GetComponent<AudioSource>();
-        if (audioSourceSfx == null)
-            audioSourceSfx = gameObject.AddComponent<AudioSource>();
-        audioSourceSfx.playOnAwake = false;
-        audioSourceSfx.loop = false;
-        audioSourceSfx.spatialBlend = 0f;
+        if (audioSourceSalto == null)
+            audioSourceSalto = GetComponent<AudioSource>();
+        if (audioSourceSalto == null)
+            audioSourceSalto = gameObject.AddComponent<AudioSource>();
+        ConfigurarAudioSource(audioSourceSalto);
+
+        if (audioSourceDanio == null)
+            audioSourceDanio = gameObject.AddComponent<AudioSource>();
+        ConfigurarAudioSource(audioSourceDanio);
 
         _saltosRestantes = saltosPorAterrizaje;
         _vidasRestantes = Mathf.Max(1, vidasMaximas);
@@ -273,6 +257,7 @@ public class PlayerController : MonoBehaviour
 
         _vidasRestantes--;
         _tiempoFinInvulnerabilidad = Time.time + Mathf.Max(0.05f, invulnerabilidadTrasDanio);
+        ReproducirSonidoDanioCortado();
         if (fuenteDanio == FuenteDanio.Pinchos)
         {
             ActivarOnDamageAnimator();
@@ -322,99 +307,7 @@ public class PlayerController : MonoBehaviour
 
     private void Morir()
     {
-        if (_cambioEscenaPorPortalEnCurso)
-            return;
-
-        if (_estaMuriendo)
-            return;
-
-        _estaMuriendo = true;
-        StartCoroutine(CargarMenuPrincipalTrasMuerte());
-    }
-
-    private IEnumerator CargarMenuPrincipalTrasMuerte()
-    {
-        // Evita quedarse "congelado" si alguna escena dejo el juego pausado.
-        Time.timeScale = 1f;
-        yield return new WaitForEndOfFrame();
-
-        if (IntentarCargarPorNombre("menuInicial"))
-            yield break;
-
-        if (SceneManager.sceneCountInBuildSettings > 0)
-        {
-            SceneManager.LoadScene(0);
-            yield break;
-        }
-
-        if (IntentarCargarPorNombre(nombreEscenaInicio))
-            yield break;
-
-        if (IntentarCargarNombresAlternativos())
-            yield break;
-
-        int indiceDetectado = BuscarIndiceMenuEnBuild();
-        if (indiceDetectado >= 0)
-        {
-            SceneManager.LoadScene(indiceDetectado);
-            yield break;
-        }
-
-        if (indiceEscenaInicio >= 0 && indiceEscenaInicio < SceneManager.sceneCountInBuildSettings)
-        {
-            SceneManager.LoadScene(indiceEscenaInicio);
-            yield break;
-        }
-
-        Debug.LogError(
-            $"No se pudo cargar la escena de inicio al morir. Configura '{nameof(nombreEscenaInicio)}', '{nameof(nombresEscenaInicioAlternativos)}' o '{nameof(indiceEscenaInicio)}' correctamente.",
-            this);
-    }
-
-    private bool IntentarCargarPorNombre(string nombreEscena)
-    {
-        if (!string.IsNullOrWhiteSpace(nombreEscena) &&
-            Application.CanStreamedLevelBeLoaded(nombreEscena))
-        {
-            SceneManager.LoadScene(nombreEscena);
-            return true;
-        }
-
-        return false;
-    }
-
-    private bool IntentarCargarNombresAlternativos()
-    {
-        if (nombresEscenaInicioAlternativos == null || nombresEscenaInicioAlternativos.Length == 0)
-            return false;
-
-        for (int i = 0; i < nombresEscenaInicioAlternativos.Length; i++)
-        {
-            if (IntentarCargarPorNombre(nombresEscenaInicioAlternativos[i]))
-                return true;
-        }
-
-        return false;
-    }
-
-    private int BuscarIndiceMenuEnBuild()
-    {
-        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-        {
-            string ruta = SceneUtility.GetScenePathByBuildIndex(i);
-            if (string.IsNullOrWhiteSpace(ruta))
-                continue;
-
-            string nombre = Path.GetFileNameWithoutExtension(ruta);
-            if (string.IsNullOrWhiteSpace(nombre))
-                continue;
-
-            string nombreLower = nombre.ToLowerInvariant();
-            if (nombreLower.Contains("menu") || nombreLower.Contains("inicio"))
-                return i;
-        }
-
-        return -1;
+        SceneManager.LoadScene("menuInicial");
     }
 
     private void ActualizarRespiracion()
@@ -516,27 +409,65 @@ public class PlayerController : MonoBehaviour
 
     private void ReproducirSonidoSaltoCortado()
     {
-        if (audioSourceSfx == null || sonidoSalto == null)
+        if (audioSourceSalto == null || sonidoSalto == null)
             return;
+
+        if (Time.time < _proximoSonidoSalto)
+            return;
+
+        _proximoSonidoSalto = Time.time + Mathf.Max(0f, intervaloSonidoSalto);
 
         if (_rutinaCorteSonidoSalto != null)
             StopCoroutine(_rutinaCorteSonidoSalto);
 
-        audioSourceSfx.Stop();
-        audioSourceSfx.clip = sonidoSalto;
-        audioSourceSfx.time = 0f;
-        audioSourceSfx.Play();
-        _rutinaCorteSonidoSalto = StartCoroutine(CortarSonidoTrasTiempo(Mathf.Max(0.05f, duracionMaxSonidoSalto)));
+        audioSourceSalto.Stop();
+        audioSourceSalto.clip = sonidoSalto;
+        audioSourceSalto.time = 0f;
+        audioSourceSalto.Play();
+        _rutinaCorteSonidoSalto = StartCoroutine(CortarSonidoTrasTiempo(audioSourceSalto, Mathf.Max(0.05f, duracionMaxSonidoSalto), true));
     }
 
-    private IEnumerator CortarSonidoTrasTiempo(float segundos)
+    private void ReproducirSonidoDanioCortado()
+    {
+        if (audioSourceDanio == null || sonidoDanio == null)
+            return;
+
+        if (Time.time < _proximoSonidoDanio)
+            return;
+
+        _proximoSonidoDanio = Time.time + Mathf.Max(0f, intervaloSonidoDanio);
+
+        if (_rutinaCorteSonidoDanio != null)
+            StopCoroutine(_rutinaCorteSonidoDanio);
+
+        audioSourceDanio.Stop();
+        audioSourceDanio.clip = sonidoDanio;
+        audioSourceDanio.time = 0f;
+        audioSourceDanio.Play();
+        _rutinaCorteSonidoDanio = StartCoroutine(CortarSonidoTrasTiempo(audioSourceDanio, Mathf.Max(0.05f, duracionMaxSonidoDanio), false));
+    }
+
+    private void ConfigurarAudioSource(AudioSource source)
+    {
+        if (source == null)
+            return;
+
+        source.playOnAwake = false;
+        source.loop = false;
+        source.spatialBlend = 0f;
+    }
+
+    private IEnumerator CortarSonidoTrasTiempo(AudioSource source, float segundos, bool esSalto)
     {
         yield return new WaitForSeconds(segundos);
 
-        if (audioSourceSfx != null && audioSourceSfx.isPlaying)
-            audioSourceSfx.Stop();
+        if (source != null && source.isPlaying)
+            source.Stop();
 
-        _rutinaCorteSonidoSalto = null;
+        if (esSalto)
+            _rutinaCorteSonidoSalto = null;
+        else
+            _rutinaCorteSonidoDanio = null;
     }
 
     public void AplicarDebuffBoss(float multiplicadorVelocidad, float multiplicadorSalto)
@@ -549,5 +480,15 @@ public class PlayerController : MonoBehaviour
     {
         _multiplicadorVelocidadExterno = 1f;
         _multiplicadorSaltoExterno = 1f;
+    }
+
+    public int GetVidas()
+    {
+        return _vidasRestantes;
+    }
+
+    public int GetVidasMax()
+    {
+        return vidasMaximas;
     }
 }
